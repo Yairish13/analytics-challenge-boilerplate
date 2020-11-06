@@ -69,9 +69,11 @@ import {
   isCommentNotification,
 } from "../../client/src/utils/transactionUtils";
 import { DbSchema } from "../../client/src/models/db-schema";
-import { findIndex, intersection } from "lodash";
+import { findIndex, intersection, last } from "lodash";
 import { OneDay,OneWeek,OneHour } from "./timeFrames";
 import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
+import {weeklyRetentionObject } from "../../client/src/models/event";
+import { date } from "faker";
 
 
 export type TDatabase = {
@@ -210,7 +212,17 @@ export const formatHour = (date: Date): string => {
   return displayDate;
 }
 
-
+export const msToDate = (ms: number): string => {
+  const dateObj = new Date(ms);
+  const dateAndHour: string = dateObj.toLocaleString("en-US", { timeZoneName: "short" }); // FORMAT: MM/DD/YYYY, 10:30:15 AM CST
+  const wierdDate: string = dateAndHour.split(",")[0];
+  const day = wierdDate.split("/")[1];
+  const month = wierdDate.split("/")[0];
+  const year = wierdDate.split("/")[2];
+  const normalDate = `${day}/${month}/${year}`;
+  //console.log(`ms to normal date: ${normalDate}`);
+  return normalDate;
+}
 export const convertDaysToMili = (days: number) => days * 24 * 60 * 60 * 1000;
 
 export const funWeek = (firstDay:number) : {}[]=>{
@@ -273,9 +285,61 @@ export const sessionsByDay = (offset:number) =>{
   return weekArr;
 }
 
-export const signUpCount = (dayZero:number)=>{
-  
+
+
+export const getUsers =(startDay:number, lastDay:number,byAction: "signup"|"login" ) :string[] =>{
+let allEvents:Event[] = getAllEvents()
+allEvents.sort((a:Event,b:Event) =>  b.date -a.date );
+allEvents= allEvents.filter((event:Event)=>(event.date>startDay)&&(event.date<lastDay)&&(event.name===byAction))
+let users: string[]=[];
+allEvents.forEach((event:Event)=>{
+  if(users.includes(event.distinct_user_id) === false){
+    users.push(event.distinct_user_id);
+  }
+})
+return users;
 }
+export const getRetentionOfWeek = (startDay:number, lastDay:number, newUsers:String[],currentTime:number):number[] =>{
+  const retention:number[]=[100];
+  startDay = lastDay;
+  lastDay = startDay + OneWeek;
+  while(startDay <= currentTime){
+    let loggedUsers: string[] = getUsers(startDay,lastDay,"login");
+    let validatedUsers: string[] = loggedUsers.filter((user)=>newUsers.includes(user))
+    let percent:number = Math.round(validatedUsers.length / newUsers.length * 100) 
+    retention.push(percent)
+    startDay = lastDay;
+    lastDay = startDay + OneWeek;
+  }
+  return retention;
+}
+
+export const retentionActivity = (dayZero:number): weeklyRetentionObject[] => {
+  let retention:weeklyRetentionObject [] = [];
+  let startDay: number = new Date(new Date(dayZero).toDateString()).getTime()
+  let lastDay :number = startDay + OneWeek;
+  let now:number = new Date(new Date().toDateString()).getTime()
+  let index:number = 0;
+  while(startDay <= now){
+    let newUsers = getUsers(startDay,lastDay,"signup");
+    let retentionObj: weeklyRetentionObject = {
+      registrationWeek:index,
+      newUsers:newUsers.length,
+      weeklyRetention:getRetentionOfWeek(startDay,lastDay,newUsers, now),
+      start:msToDate(startDay),
+      end:msToDate(lastDay)
+    }
+    retention.push(retentionObj);
+    startDay = lastDay;
+    lastDay= startDay + OneWeek;
+    index++
+
+  }
+  return retention;
+}
+
+
+
 // User
 export const getUserBy = (key: string, value: any) => getBy(USER_TABLE, key, value);
 export const getUserId = (user: User): string => user.id;
@@ -936,6 +1000,7 @@ export const getRandomUser = () => {
   const users = getAllUsers();
   return sample(users)!;
 };
+
 
 /* istanbul ignore next */
 export const getAllContacts = () => db.get(CONTACT_TABLE).value();
