@@ -70,7 +70,10 @@ import {
   isCommentNotification,
 } from "../../client/src/utils/transactionUtils";
 import { DbSchema } from "../../client/src/models/db-schema";
-import { OneDay,OneHour,OneWeek } from "./timeFrames";
+import { findIndex, intersection, last } from "lodash";
+import { OneDay,OneWeek,OneHour } from "./timeFrames";
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
+import { date } from "faker";
 
 
 export type TDatabase = {
@@ -287,6 +290,7 @@ export const sessionsByDay = (offset:number) =>{
 export const getUsers =(startDay:number, lastDay:number,byAction: "signup"|"login" ) :string[] =>{
 let allEvents:Event[] = getAllEvents()
 allEvents.sort((a:Event,b:Event) =>  a.date -b.date );
+allEvents.sort((a:Event,b:Event) =>  b.date -a.date );
 allEvents= allEvents.filter((event:Event)=>(event.date>startDay)&&(event.date<lastDay)&&(event.name===byAction))
 let users: string[]=[];
 allEvents.forEach((event:Event)=>{
@@ -998,6 +1002,7 @@ export const getRandomUser = () => {
   const users = getAllUsers();
   return sample(users)!;
 };
+
 
 /* istanbul ignore next */
 export const getAllContacts = () => db.get(CONTACT_TABLE).value();
