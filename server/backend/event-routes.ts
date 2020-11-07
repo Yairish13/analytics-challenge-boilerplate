@@ -15,6 +15,7 @@ import {
   isUserValidator,
 } from "./validators";
 import { filter } from "bluebird";
+import { KeyObject } from "crypto";
 const router = express.Router();
 
 // Routes
@@ -54,7 +55,7 @@ if(filters.search){
   filteredEvents = filteredEvents.filter((event)=>{
     let bool = false;
     for(const key in event){
-      if(reg.test(event[key])){
+      if(reg.test(event[key]) && key !== 'date'){
         bool=true;
       }
     }
