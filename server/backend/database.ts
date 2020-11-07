@@ -49,7 +49,8 @@ import {
   NotificationResponseItem,
   TransactionQueryPayload,
   DefaultPrivacyLevel,
-  Event
+  Event,
+  weeklyRetentionObject
 } from "../../client/src/models";
 import Fuse from "fuse.js";
 import {
@@ -69,6 +70,7 @@ import {
   isCommentNotification,
 } from "../../client/src/utils/transactionUtils";
 import { DbSchema } from "../../client/src/models/db-schema";
+import { OneDay,OneHour,OneWeek } from "./timeFrames";
 
 
 export type TDatabase = {
@@ -176,8 +178,6 @@ export const removeUserFromResults = (userId: User["id"], results: User[]) =>
 
 // convenience methods
 
-<<<<<<< Updated upstream
-=======
 //Event
 export const getAllEvents = () : Event[] => db.get(EVENT_TABLE).value();
 export const createEvent =(event:Event)=> db.get(EVENT_TABLE).push(event).write();
@@ -338,7 +338,6 @@ export const retentionActivity = (dayZero:number): weeklyRetentionObject[] => {
 
 
 
->>>>>>> Stashed changes
 // User
 export const getUserBy = (key: string, value: any) => getBy(USER_TABLE, key, value);
 export const getUserId = (user: User): string => user.id;
