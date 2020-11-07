@@ -17,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/suvelocity/analytics-challenge-boilerplate/issues"
   },
-  "homepage": "https://github.com/suvelocity/analytics-challenge-boilerplate#readme"
+  "homepage": "https://github.com/suvelocity/analytics-challenge-boilerplate#readme",
+  "dependencies": {
+    "react-datepicker": "^3.3.0",
+    "recharts": "^1.8.5"
+  }
 }

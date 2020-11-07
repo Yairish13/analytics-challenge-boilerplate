@@ -176,6 +176,169 @@ export const removeUserFromResults = (userId: User["id"], results: User[]) =>
 
 // convenience methods
 
+<<<<<<< Updated upstream
+=======
+//Event
+export const getAllEvents = () : Event[] => db.get(EVENT_TABLE).value();
+export const createEvent =(event:Event)=> db.get(EVENT_TABLE).push(event).write();
+
+export interface UniqueDay{
+date: string;
+count: number;
+}
+
+interface hourCountObj {
+  hour:string,
+  count:number
+}
+
+const formatDate = (date: Date): string => {
+  var d = new Date(date),
+    month = "" + (d.getMonth() + 1),
+    day = "" + d.getDate(),
+    year = d.getFullYear();
+
+  if (month.length < 2) month = "0" + month;
+  if (day.length < 2) day = "0" + day;
+  return [day, month, year].join("/");
+};
+
+export const formatHour = (date: Date): string => {
+  var displayDate = ("0" + date.getHours()).slice(-2) + ":" +
+    ("0" + "0");
+  return displayDate;
+}
+
+export const msToDate = (ms: number): string => {
+  const dateObj = new Date(ms);
+  const dateAndHour: string = dateObj.toLocaleString("en-US", { timeZoneName: "short" }); // FORMAT: MM/DD/YYYY, 10:30:15 AM CST
+  const wierdDate: string = dateAndHour.split(",")[0];
+  const day = wierdDate.split("/")[1];
+  const month = wierdDate.split("/")[0];
+  const year = wierdDate.split("/")[2];
+  const normalDate = `${day}/${month}/${year}`;
+  //console.log(`ms to normal date: ${normalDate}`);
+  return normalDate;
+}
+export const convertDaysToMili = (days: number) => days * 24 * 60 * 60 * 1000;
+
+export const funWeek = (firstDay:number) : {}[]=>{
+  let daysObj : {date:string,count:number}[] = [];
+  for(let i=0;i<7;i++){
+    let date: string = formatDate(new Date(firstDay + OneDay* i))
+    daysObj.push({date:date, count:0})
+  }
+  return daysObj;
+}
+
+export const sessionsByHours = (offset:number):hourCountObj[] =>{
+  let endOfTheDay:number = new Date(new Date().toDateString()).getTime() + convertDaysToMili(1-offset);
+  let startOfTheDay:number = new Date(new Date().toDateString()).getTime() - convertDaysToMili(offset);
+  let hoursArr = hoursOfADay(startOfTheDay);
+  let events = db.get(EVENT_TABLE)
+  .filter((event:Event) => (event.date < endOfTheDay) && (event.date > startOfTheDay))
+  .sort((a:Event, b:Event) => a.date - b.date)
+  .groupBy((event:Event) => formatHour(new Date(event.date))).value()
+  let eventsByHour = Object.keys(events).map((key) => {
+    let uniqEvent:Event[] = uniqBy("session_id", events[key])
+    return {hour:key , count: uniqEvent.length}
+  })
+  eventsByHour.map((date: hourCountObj) => {
+    let index: number = hoursArr.findIndex((date2: hourCountObj) => date.hour === date2.hour)
+    if (index > -1)
+      hoursArr[index] = date
+  })
+  return hoursArr;
+}
+
+export const hoursOfADay = (startOfTheDay:number):hourCountObj[] =>{
+  let hoursObj:{hour:string, count:number}[] = [];
+  for(let i = 0; i < 24; i++){
+    let displayHour:string = formatHour(new Date(startOfTheDay + OneHour * i))
+    hoursObj.push({hour:displayHour , count:0})
+  }
+  return hoursObj;
+}
+
+export const sessionsByDay = (offset:number) =>{
+  // let lastDay: number = new Date().setHours(0,0,0,0) + OneDay - offset*OneWeek;
+  // let firstDay: number= lastDay- 7* OneDay;
+  let lastDay:number = new Date(new Date().toDateString()).getTime() + convertDaysToMili(1 - offset);
+  let firstDay: number = new Date(new Date().toDateString()).getTime() - convertDaysToMili(offset + 6); 
+  let weekArr : {}[] = funWeek(firstDay)
+  let allEvents = db.get(EVENT_TABLE)
+  .filter((event:Event) => (event.date> firstDay) && (event.date<lastDay))
+  .sort((a:Event, b:Event)=> a.date-b.date)
+  .groupBy((event:Event)=>formatDate(new Date(event.date))).value()
+  let eventsPerDay : {}[];
+  eventsPerDay = Object.keys(allEvents).map((key)=> {
+    let uniqueEvent:Event[] = uniqBy("session_id", allEvents[key])
+    return {date :key, count:uniqueEvent.length}
+  })
+  eventsPerDay.map((date:any)=>{
+    let i:number = weekArr.findIndex((x:any)=> date.date === x.date)
+    if(i > -1) weekArr[i]= date;
+  })
+  return weekArr;
+}
+
+
+
+export const getUsers =(startDay:number, lastDay:number,byAction: "signup"|"login" ) :string[] =>{
+let allEvents:Event[] = getAllEvents()
+allEvents.sort((a:Event,b:Event) =>  a.date -b.date );
+allEvents= allEvents.filter((event:Event)=>(event.date>startDay)&&(event.date<lastDay)&&(event.name===byAction))
+let users: string[]=[];
+allEvents.forEach((event:Event)=>{
+  if(users.includes(event.distinct_user_id) === false){
+    users.push(event.distinct_user_id);
+  }
+})
+return users;
+}
+
+export const getRetentionOfWeek = (startDay:number, lastDay:number, newUsers:String[],currentTime:number):number[] =>{
+  const retention:number[]=[100];
+  startDay = lastDay;
+  lastDay = startDay + OneWeek;
+  while(startDay <= currentTime){
+    let loggedUsers: string[] = getUsers(startDay,lastDay,"login");
+    let validatedUsers: string[] = loggedUsers.filter((user)=>newUsers.includes(user))
+    let percent:number = Math.round(validatedUsers.length / newUsers.length * 100) 
+    retention.push(percent)
+    startDay = lastDay;
+    lastDay = startDay + OneWeek;
+  }
+  return retention;
+}
+
+export const retentionActivity = (dayZero:number): weeklyRetentionObject[] => {
+  let retention:weeklyRetentionObject [] = [];
+  let startDay: number = new Date(new Date(dayZero).toDateString()).getTime()
+  let lastDay :number = startDay + OneWeek;
+  let now:number = new Date(new Date().toDateString()).getTime()
+  let index:number = 0;
+  while(startDay <= now){
+    let newUsers = getUsers(startDay,lastDay,"signup");
+    let retentionObj: weeklyRetentionObject = {
+      registrationWeek:index,
+      newUsers:newUsers.length,
+      weeklyRetention:getRetentionOfWeek(startDay,lastDay,newUsers, now),
+      start:msToDate(startDay),
+      end:msToDate(lastDay)
+    }
+    retention.push(retentionObj);
+    startDay = lastDay;
+    lastDay= startDay + OneWeek;
+    index++
+
+  }
+  return retention;
+}
+
+
+
+>>>>>>> Stashed changes
 // User
 export const getUserBy = (key: string, value: any) => getBy(USER_TABLE, key, value);
 export const getUserId = (user: User): string => user.id;
