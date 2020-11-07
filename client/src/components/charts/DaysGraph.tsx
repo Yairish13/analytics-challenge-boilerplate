@@ -7,7 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 
 
-const GraphByDay: React.FC = () => {
+const DaysGraph: React.FC = () => {
     const [data, setData] = useState<Event[]>([]);
     const [startDate, setStartDate] = useState(new Date());
 
@@ -33,4 +33,4 @@ const GraphByDay: React.FC = () => {
     )
 }
 
-export default GraphByDay;
+export default DaysGraph;

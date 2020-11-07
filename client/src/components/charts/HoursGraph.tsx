@@ -5,26 +5,24 @@ import { Event } from '../../models/event';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-
-
-const GraphByDay: React.FC = () => {
+const HoursGraph: React.FC = () => {
     const [data, setData] = useState<Event[]>([]);
     const [startDate, setStartDate] = useState(new Date());
 
-
     useEffect(() => {
         (async () => {
-            const { data } = await axios.get(`http://localhost:3001/events/by-hours/${(new Date().getTime() - startDate.getTime()) / (1000 * 24 * 60 * 60)}`)
+            const { data } = await axios.get(`http://localhost:3001/events/by-hours/${(Math.floor(new Date().getTime() - startDate.getTime()) / (1000 * 24 * 60 * 60))}`)
             setData(data)
         })();
     }, [startDate])
+
     return (
-        <div>
+        <div >
             <DatePicker selected={startDate} onChange={(date: Date) => setStartDate(date)} />
             <LineChart width={400} height={200} data={data}>
-                <Line type="linear" dataKey='count' stroke="red" />
+                <Line type="linear" dataKey='count' stroke="blue" />
                 <CartesianGrid stroke="#ccc" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="hour" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
@@ -33,4 +31,4 @@ const GraphByDay: React.FC = () => {
     )
 }
 
-export default GraphByDay;
+export default HoursGraph;
