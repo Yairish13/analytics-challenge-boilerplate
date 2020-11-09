@@ -22,7 +22,7 @@ const DaysGraph: React.FC = () => {
         <div>
             <DatePicker selected={startDate} onChange={(date: Date) => setStartDate(date)} />
             <LineChart width={400} height={200} data={data}>
-                <Line type="linear" dataKey='count' stroke="red" />
+                <Line type="linear" dataKey='count' stroke="#82ca9d" />
                 <CartesianGrid stroke="#ccc" />
                 <XAxis dataKey="date" />
                 <YAxis />

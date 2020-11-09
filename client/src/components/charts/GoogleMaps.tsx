@@ -14,7 +14,7 @@ const center = {
 };
 
 
-const Maps: React.FC = () => {
+const GoogleMaps: React.FC = () => {
     const [allEvents, setAllEvents] = useState<Event[]>();
 
     useEffect(() => {
@@ -40,4 +40,4 @@ const Maps: React.FC = () => {
     )
 }
 
-export default Maps;
+export default GoogleMaps;

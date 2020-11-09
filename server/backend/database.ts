@@ -50,7 +50,8 @@ import {
   TransactionQueryPayload,
   DefaultPrivacyLevel,
   Event,
-  weeklyRetentionObject
+  weeklyRetentionObject,
+  eventName
 } from "../../client/src/models";
 import Fuse from "fuse.js";
 import {
@@ -74,6 +75,8 @@ import { findIndex, intersection, last } from "lodash";
 import { OneDay,OneWeek,OneHour } from "./timeFrames";
 import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
 import { date } from "faker";
+import { Dictionary } from "express-serve-static-core";
+import { userFieldsValidator } from "./validators";
 
 
 export type TDatabase = {
@@ -340,7 +343,36 @@ export const retentionActivity = (dayZero:number): weeklyRetentionObject[] => {
   return retention;
 }
 
+export interface osCounter {
+  name:string,
+  value:number
+}
 
+
+export const osUsers = ():osCounter[] =>{
+  const events:Dictionary<Event[]> = db.get(EVENT_TABLE)
+    .groupBy((event: Event) => (event.os)).value()
+  const countsArray: osCounter[] = []
+  let count:number = 0;
+  for(let j = 0; j < Object.keys(events).length; j++)
+  {
+    count+= Object.values(events)[j].length;
+  }
+
+  for(let i = 0 ; i < Object.keys(events).length; i++)
+  {
+    
+    countsArray.push(
+      {
+        name: Object.keys(events)[i],
+        value: Math.round((((Object.values(events)[i].length)* 100)) / count)
+      }
+    )
+  }
+  return countsArray;
+}
+const users = osUsers()
+console.log(users)
 
 // User
 export const getUserBy = (key: string, value: any) => getBy(USER_TABLE, key, value);

@@ -4,7 +4,7 @@ import express from "express";
 import { Request, Response } from "express";
 
 // some useful database functions in here:
-import {getAllEvents,createEvent, sessionsByDay, sessionsByHours, retentionActivity} from "./database";
+import {getAllEvents,createEvent, sessionsByDay, sessionsByHours, retentionActivity, osUsers} from "./database";
 import { Event, weeklyRetentionObject } from "../../client/src/models/event";
 import { ensureAuthenticated, validateMiddleware } from "./helpers";
 
@@ -16,6 +16,8 @@ import {
 } from "./validators";
 import { filter } from "bluebird";
 import { KeyObject } from "crypto";
+import { request } from "http";
+import { countBy } from "lodash";
 const router = express.Router();
 
 // Routes
@@ -27,6 +29,11 @@ interface Filter {
   search?: string;
   offset?: number;
 }
+
+router.get('/by-os', (req: Request, res: Response) => {
+  res.send(osUsers())
+});
+
 
 router.post("/", (req: Request, res: Response) => {
   try {
@@ -40,6 +47,7 @@ router.post("/", (req: Request, res: Response) => {
 router.get('/all', (req: Request, res: Response) => {
   res.json(getAllEvents())
 });
+
 
 router.get('/all-filtered', (req: Request, res: Response) => {
 const filters: Filter = req.query;
